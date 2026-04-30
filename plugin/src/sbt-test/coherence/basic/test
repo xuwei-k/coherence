@@ -1,0 +1,9 @@
+> Test/compile
+> check
+> set coherenceScalaVersion := Some("2.12.21")
+-> coherenceCheck
+> set coherenceScalaVersion := Some("3.8.3")
+> coherenceCheck
+$ absent target/coherence.json
+> coherenceWrite
+$ exists target/coherence.json
