@@ -1,3 +1,5 @@
+addSbtPlugin("com.github.xuwei-k" % "coherence-plugin" % "0.1.0")
+
 addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.11.0")
 
 addSbtPlugin("com.github.xuwei-k" % "sbt-root-aggregate" % "0.1.0")
