@@ -25,7 +25,18 @@ val expect = coherence.Output(
         45,
       ),
     )
-  )
+  ),
+  Seq(
+    "-- Error: a1/src/main/scala/A.scala:7:2 ----------------------------------------",
+    "7 |  given a1: A[Int] = ???",
+    "  |  ^^^^^^^^^^^^^^^^^^^",
+    "  |  Duplicate example.A[scala.Int] instance",
+    "-- Error: a1/src/main/scala/A.scala:6:2 ----------------------------------------",
+    "6 |  given A[Int] = ???",
+    "  |  ^^^^^^^^^^^^^^^",
+    "  |  Duplicate example.A[scala.Int] instance",
+    "",
+  ).mkString("\n")
 )
 
 val root = project
@@ -34,6 +45,7 @@ val root = project
     scalaVersion := "2.13.18",
     InputKey[Unit]("check") := {
       val result = (LocalRootProject / coherenceCheck).value
-      assert(result == expect, result)
+      val escaped = result.copy(console = result.console.replaceAll("\u001B\\[[;\\d]*m", ""))
+      assert(escaped == expect, escaped)
     },
   )

@@ -7,6 +7,7 @@ final case class Input(
   tastyDirectories: Seq[String],
   classpath: Seq[String],
   excludeTypes: Seq[String],
+  console: Boolean,
 ) extends InputCommon
     with ToJson[Input] {
   override def toString: String = toJsonString
@@ -14,5 +15,5 @@ final case class Input(
 
 object Input extends FromJson[Input] {
   implicit val instance: JsonFormat[Input] =
-    caseClass3(apply, (_: Input).asTupleOption)("directories", "classpath", "exclude")
+    caseClass4(apply, (_: Input).asTupleOption)("directories", "classpath", "exclude", "console")
 }

@@ -5,5 +5,7 @@
 > set coherenceScalaVersion := Some("3.8.3")
 > coherenceCheck
 $ absent target/coherence.json
+$ absent target/coherence.txt
 > coherenceWrite
 $ exists target/coherence.json
+$ exists target/coherence.txt
