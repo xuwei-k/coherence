@@ -43,9 +43,14 @@ val root = project
   .aggregate(a1, a2)
   .settings(
     scalaVersion := "2.13.18",
-    InputKey[Unit]("check") := {
+    InputKey[Unit]("checkColor") := {
       val result = (LocalRootProject / coherenceCheck).value
       val escaped = result.copy(console = result.console.replaceAll("\u001B\\[[;\\d]*m", ""))
+      assert(escaped.console != result.console)
       assert(escaped == expect, escaped)
+    },
+    InputKey[Unit]("checkNoColor") := {
+      val result = (LocalRootProject / coherenceCheck).value
+      assert(result == expect, result)
     },
   )

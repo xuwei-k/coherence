@@ -1,5 +1,6 @@
 > Test/compile
-> check
+-> checkNoColor
+> checkColor
 > set coherenceScalaVersion := Some("2.12.21")
 -> coherenceCheck
 > set coherenceScalaVersion := Some("3.8.3")
@@ -9,3 +10,6 @@ $ absent target/coherence.txt
 > coherenceWrite
 $ exists target/coherence.json
 $ exists target/coherence.txt
+> set coherenceInput ~= (_.copy(color = false))
+> checkNoColor
+-> checkColor

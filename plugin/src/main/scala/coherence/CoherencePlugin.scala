@@ -159,6 +159,7 @@ object CoherencePlugin extends AutoPlugin with CoherencePluginCompat {
             classpath = x.join.value.flatten.sorted.distinct,
             excludeTypes = (LocalRootProject / coherenceExcludeTypes).?.value.toSeq.flatten,
             console = true,
+            color = true,
           )
         }
       }
