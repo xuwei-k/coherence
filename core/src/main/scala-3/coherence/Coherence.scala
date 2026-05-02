@@ -14,7 +14,7 @@ import scala.tasty.inspector.Tasty
 import scala.tasty.inspector.TastyInspector
 
 object Coherence {
-  private def inspector(showConsole: Boolean): Inspector = new Inspector {
+  private def inspector(input: Input): Inspector = new Inspector {
     override def inspect(using q: Quotes)(tastys: List[Tasty[q.type]]): Unit = {
       import q.reflect.*
       val buffer = new ByteArrayOutputStream()
@@ -75,12 +75,13 @@ object Coherence {
         v.foreach { x =>
           val message = s"Duplicate ${k} instance"
           dotty.tools.dotc.report.error(message, x.pos.asInstanceOf)(using context)
-          if (showConsole) {
+          if (input.console) {
             report.error(message, x.pos)
           }
         }
       }
       myWriter.flush()
+      val str = new String(buffer.toByteArray, StandardCharsets.UTF_8)
       val out = Output(
         duplicate.toMap.view
           .mapValues(
@@ -93,7 +94,11 @@ object Coherence {
             }
           )
           .toMap,
-        new String(buffer.toByteArray, StandardCharsets.UTF_8)
+        if (input.color) {
+          str
+        } else {
+          str.replaceAll("\u001B\\[[;\\d]*m", "")
+        }
       )
       Files.writeString(
         new File("output.json").toPath,
@@ -121,6 +126,6 @@ object Coherence {
       tastyFiles = tastyFiles,
       jars = Nil,
       dependenciesClasspath = input.classpath.toList
-    )(inspector(input.console))
+    )(inspector(input))
   }
 }
