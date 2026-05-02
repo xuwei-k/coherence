@@ -4,14 +4,18 @@ import java.nio.file.Files
 import sbt.*
 import sbt.Keys._
 import sbt.plugins.JvmPlugin
+import sjsonnew.BasicJsonProtocol._
 
 object CoherencePlugin extends AutoPlugin with CoherencePluginCompat {
   object autoImport {
     @transient
     val coherenceCheck = taskKey[Output]("")
     @transient
-    val coherenceWrite = taskKey[File]("")
-    val coherenceWriteFile = settingKey[File]("")
+    val coherenceWrite = taskKey[Unit]("")
+    val coherenceWriteJsonFile = settingKey[File]("")
+    @deprecated("use coherenceWriteJsonFile", "0.1.1")
+    val coherenceWriteFile = coherenceWriteJsonFile
+    val coherenceWriteTextFile = settingKey[File]("")
     val coherenceScalaVersion = settingKey[Option[String]]("")
     @transient
     val coherenceInput = taskKey[Input]("")
@@ -46,14 +50,19 @@ object CoherencePlugin extends AutoPlugin with CoherencePluginCompat {
   }
 
   override def buildSettings: Seq[Def.Setting[?]] = Def.settings(
-    LocalRootProject / coherenceWriteFile := file("target/coherence.json"),
+    LocalRootProject / coherenceWriteJsonFile := file("target/coherence.json"),
+    LocalRootProject / coherenceWriteTextFile := file("target/coherence.txt"),
     LocalRootProject / coherenceWrite := {
-      val f = (LocalRootProject / coherenceWriteFile).value
       IO.write(
-        f,
-        (LocalRootProject / coherenceCheck).value.toJsonString
+        (LocalRootProject / coherenceWriteJsonFile).value,
+        ToJson.toJsonString(
+          (LocalRootProject / coherenceCheck).value.values
+        )
       )
-      f
+      IO.write(
+        (LocalRootProject / coherenceWriteTextFile).value,
+        (LocalRootProject / coherenceCheck).value.console
+      )
     },
     LocalRootProject / coherenceScalaVersion := None,
     LocalRootProject / coherenceCheck / forkOptions := Def.uncached(
@@ -148,7 +157,8 @@ object CoherencePlugin extends AutoPlugin with CoherencePluginCompat {
           Input(
             tastyDirectories = directories.join.value.flatten.map(_.getAbsolutePath),
             classpath = x.join.value.flatten.sorted.distinct,
-            excludeTypes = (LocalRootProject / coherenceExcludeTypes).?.value.toSeq.flatten
+            excludeTypes = (LocalRootProject / coherenceExcludeTypes).?.value.toSeq.flatten,
+            console = true,
           )
         }
       }

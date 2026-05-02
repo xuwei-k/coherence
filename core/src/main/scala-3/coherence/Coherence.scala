@@ -1,6 +1,10 @@
 package coherence
 
+import dotty.tools.dotc.reporting.ConsoleReporter
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.PrintWriter
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import scala.annotation.tailrec
 import scala.quoted.Quotes
@@ -10,9 +14,21 @@ import scala.tasty.inspector.Tasty
 import scala.tasty.inspector.TastyInspector
 
 object Coherence {
-  private val inspector: Inspector = new Inspector {
+  private def inspector(showConsole: Boolean): Inspector = new Inspector {
     override def inspect(using q: Quotes)(tastys: List[Tasty[q.type]]): Unit = {
       import q.reflect.*
+      val buffer = new ByteArrayOutputStream()
+      val myWriter = new PrintWriter(buffer)
+      val context =
+        q.asInstanceOf[scala.quoted.runtime.impl.QuotesImpl]
+          .ctx
+          .fresh
+          .setReporter(
+            new ConsoleReporter(
+              writer = myWriter,
+              echoer = myWriter,
+            )
+          )
       case class Result(typeString: String, pos: Position)
       val accumulator = new TreeAccumulator[List[Result]] {
         @tailrec
@@ -57,9 +73,14 @@ object Coherence {
       val duplicate = result.groupBy(_.typeString).filter(_._2.sizeIs > 1).toList.sortBy(_._2.size)
       duplicate.foreach { (k, v) =>
         v.foreach { x =>
-          report.error(s"Duplicate ${k} instance", x.pos)
+          val message = s"Duplicate ${k} instance"
+          dotty.tools.dotc.report.error(message, x.pos.asInstanceOf)(using context)
+          if (showConsole) {
+            report.error(message, x.pos)
+          }
         }
       }
+      myWriter.flush()
       val out = Output(
         duplicate.toMap.view
           .mapValues(
@@ -71,7 +92,8 @@ object Coherence {
               )
             }
           )
-          .toMap
+          .toMap,
+        new String(buffer.toByteArray, StandardCharsets.UTF_8)
       )
       Files.writeString(
         new File("output.json").toPath,
@@ -99,6 +121,6 @@ object Coherence {
       tastyFiles = tastyFiles,
       jars = Nil,
       dependenciesClasspath = input.classpath.toList
-    )(inspector)
+    )(inspector(input.console))
   }
 }
