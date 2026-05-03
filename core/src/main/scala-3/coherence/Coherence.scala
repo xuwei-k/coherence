@@ -108,13 +108,13 @@ object Coherence {
   }
 
   def main(args: Array[String]): Unit = {
-    val input = Input.fromJson(java.nio.file.Files.readString(new java.io.File("input.json").toPath))
+    val input = Input.fromJson(Files.readString(new File("input.json").toPath))
     import scala.jdk.StreamConverters.*
     val tastyFiles = input.tastyDirectories
-      .filter(dir => new java.io.File(dir).exists())
+      .filter(dir => new File(dir).exists())
       .flatMap(dir =>
-        java.nio.file.Files
-          .walk(new java.io.File(dir).toPath)
+        Files
+          .walk(new File(dir).toPath)
           .filter(_.toFile.isFile)
           .filter(_.toFile.getName.endsWith(".tasty"))
           .toScala(List)
