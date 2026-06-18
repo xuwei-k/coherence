@@ -1,6 +1,7 @@
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 def sbt2 = "2.0.0"
+def sbt1 = "1.12.12"
 def Scala212 = "2.12.21"
 val Scala3 = scala_version_from_sbt_version.ScalaVersionFromSbtVersion(sbt2)
 
@@ -8,7 +9,7 @@ val baseSettings = Def.settings(
   publishTo := (if (isSnapshot.value) None else localStaging.value),
   Compile / unmanagedResources += (LocalRootProject / baseDirectory).value / "LICENSE.txt",
   Compile / doc / scalacOptions ++= {
-    val hash = sys.process.Process("git rev-parse HEAD").lineStream_!.head
+    val hash = sys.process.Process("git rev-parse HEAD").lazyLines_!.head
     if (scalaBinaryVersion.value != "3") {
       Seq(
         "-sourcepath",
@@ -72,7 +73,7 @@ val common = projectMatrix
         case "3" =>
           "com.eed3si9n" %% "sjson-new-scalajson" % sjsonNewVersion(sbt2, "3")
         case _ =>
-          "com.eed3si9n" %% "sjson-new-scalajson" % sjsonNewVersion(sbtVersion.value, "2.12")
+          "com.eed3si9n" %% "sjson-new-scalajson" % sjsonNewVersion(sbt1, "2.12")
       }
     },
     Compile / sourceGenerators += task {
@@ -114,8 +115,8 @@ val plugin = projectMatrix
     pluginCrossBuild / sbtVersion := (
       scalaBinaryVersion.value match {
         case "2.12" =>
-          sbtVersion.value
-        case _ =>
+          sbt1
+        case "3" =>
           sbt2
       }
     ),
@@ -125,29 +126,24 @@ val plugin = projectMatrix
   )
   .dependsOn(common)
 
-val root = project
-  .in(file("."))
-  .settings(
-    baseSettings,
-    autoScalaLibrary := false,
-    publish / skip := true,
-    releaseProcess := Seq[ReleaseStep](
-      checkSnapshotDependencies,
-      inquireVersions,
-      runClean,
-      setReleaseVersion,
-      commitReleaseVersion,
-      tagRelease,
-      releaseStepCommandAndRemaining("publishSigned"),
-      releaseStepCommandAndRemaining("sonaRelease"),
-      setNextVersion,
-      commitNextVersion,
-      pushChanges
-    ),
-  )
-  .aggregate(core)
-  .aggregate(plugin.projectRefs *)
-  .aggregate(common.projectRefs *)
+val `coherence-root` = rootProject.autoAggregate.settings(
+  baseSettings,
+  autoScalaLibrary := false,
+  publish / skip := true,
+  releaseProcess := Seq[ReleaseStep](
+    checkSnapshotDependencies,
+    inquireVersions,
+    runClean,
+    setReleaseVersion,
+    commitReleaseVersion,
+    tagRelease,
+    releaseStepCommandAndRemaining("publishSigned"),
+    releaseStepCommandAndRemaining("sonaRelease"),
+    setNextVersion,
+    commitNextVersion,
+    pushChanges
+  ),
+)
 
 def sjsonNewVersion(sbtV: String, scalaBinaryV: String): String = {
   import lmcoursier.internal.shaded.coursier
@@ -160,12 +156,12 @@ def sjsonNewVersion(sbtV: String, scalaBinaryV: String): String = {
         "sbt"
       )
     ),
-    sbtV
+    coursier.version.VersionConstraint(sbtV),
   )
-  coursier.Fetch().addDependencies(dependency).runResult().detailedArtifacts.map(_._1).collect {
+  coursier.Fetch().addDependencies(dependency).runResult().detailedArtifacts0.map(_._1).collect {
     case x
         if (x.module.organization.value == "com.eed3si9n") && (x.module.name.value == s"sjson-new-scalajson_${scalaBinaryV}") =>
-      x.version
+      x.versionConstraint.asString
   } match {
     case Seq(x) =>
       x
