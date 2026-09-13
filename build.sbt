@@ -62,7 +62,7 @@ val baseSettings = Def.settings(
     </scm>
   ),
   organization := "com.github.xuwei-k",
-  homepage := Some(url("https://github.com/xuwei-k/coherence")),
+  homepage := Some(uri("https://github.com/xuwei-k/coherence")),
   licenses := List(License.MIT),
 )
 
