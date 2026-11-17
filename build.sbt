@@ -150,7 +150,6 @@ val `coherence-root` = rootProject.autoAggregate.settings(
 )
 
 def sjsonNewVersion(sbtV: String, scalaBinaryV: String): String = {
-  import lmcoursier.internal.shaded.coursier
   val dependency = coursier.Dependency(
     coursier.Module(
       coursier.Organization(
