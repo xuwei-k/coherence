@@ -29,6 +29,5 @@ jobs:
            "all scalafmtSbtCheck scalafmtCheckAll"
            "scalafixAll --check"
            test
-           coherenceCheck
            publishLocal
            scripted

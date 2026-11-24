@@ -2,9 +2,9 @@ package coherence
 
 import java.nio.file.Files
 import sbt.*
-import sbt.Keys._
+import sbt.Keys.*
 import sbt.plugins.JvmPlugin
-import sjsonnew.BasicJsonProtocol._
+import sjsonnew.BasicJsonProtocol.*
 
 object CoherencePlugin extends AutoPlugin with CoherencePluginCompat {
   object autoImport {
@@ -28,14 +28,23 @@ object CoherencePlugin extends AutoPlugin with CoherencePluginCompat {
 
   import autoImport.*
 
-  private def getClassDirectories(id: String) = Def.setting {
+  private[coherence] def getClassDirectories(id: String) = Def.setting {
     Seq(
       (LocalProject(id) / Compile / classDirectory).value,
       (LocalProject(id) / Test / classDirectory).value
     )
   }
+  private[coherence] def getAllClasspath(projects: Seq[String]): Seq[Def.Initialize[Task[Seq[String]]]] =
+    projects.map { p =>
+      Def.task {
+        Seq(
+          convertClasspath((LocalProject(p) / Compile / fullClasspath).value),
+          convertClasspath((LocalProject(p) / Test / fullClasspath).value),
+        ).flatten
+      }
+    }
 
-  private val coherenceProjects = Def.task {
+  private[coherence] val coherenceProjects = Def.task {
     val extracted = Project.extract(state.value)
     val currentBuildUri = extracted.currentRef.build
     extracted.structure.units
@@ -139,31 +148,7 @@ object CoherencePlugin extends AutoPlugin with CoherencePluginCompat {
       }
     }.value,
     LocalRootProject / coherenceExcludeTypes := Nil,
-    LocalRootProject / coherenceInput := Def.taskDyn {
-      val projects: List[String] = coherenceProjects.value
-      val directories = projects.map(getClassDirectories)
-      val allClasspath = projects.map { p =>
-        Def.task {
-          Seq(
-            convertClasspath((LocalProject(p) / Compile / fullClasspath).value),
-            convertClasspath((LocalProject(p) / Test / fullClasspath).value),
-          ).flatten
-        }
-      }.join
-
-      Def.taskDyn {
-        val x = allClasspath.value
-        Def.task {
-          Input(
-            tastyDirectories = directories.join.value.flatten.map(_.getAbsolutePath),
-            classpath = x.join.value.flatten.sorted.distinct,
-            excludeTypes = (LocalRootProject / coherenceExcludeTypes).?.value.toSeq.flatten,
-            console = true,
-            color = true,
-          )
-        }
-      }
-    }.value
+    LocalRootProject / coherenceInput := coherenceInputTask.value
   )
 
   private def sbtLauncher[A](k: TaskKey[A]): Def.Initialize[Task[File]] = Def.taskDyn {
