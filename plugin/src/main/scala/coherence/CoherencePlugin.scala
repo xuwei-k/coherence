@@ -90,6 +90,8 @@ object CoherencePlugin extends AutoPlugin with CoherencePluginCompat {
         case Some(v) =>
           assert(VersionNumber(v)._1.contains(3L), s"Invalid ${coherenceScalaVersion.key.label} ${v}")
           s"""|scalaVersion := "${v}"
+              |
+              |libraryDependencies += "org.scala-lang" %% "scala3-tasty-inspector" % scalaVersion.value
               |""".stripMargin
         case None =>
           """|autoScalaLibrary := false
