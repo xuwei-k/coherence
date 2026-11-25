@@ -1,4 +1,4 @@
-addSbtPlugin("com.github.xuwei-k" % "coherence-plugin" % "0.1.1")
+addSbtPlugin("com.github.xuwei-k" % "coherence-plugin" % "0.2.0")
 
 addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.4.0")
 
